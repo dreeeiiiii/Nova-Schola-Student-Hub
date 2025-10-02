@@ -1,10 +1,13 @@
 import { Router } from "express";
+import { getAnnouncement, createAnnouncement,listAnnouncements } from "../controllers/announcement.controller.js"; 
+import { authMiddleware } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
-// Example get announcements route
-router.get("/", (req, res) => {
-  res.json([{ id: 1, title: "Welcome Week", body: "Classes start Monday!" }]);
-});
 
+router.get("/:id", getAnnouncement);
+router.get("/",listAnnouncements);
+//protected routes
+router.post("/", authMiddleware, createAnnouncement);
+  
 export default router;

@@ -4,11 +4,10 @@ import {authMiddleware } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
-// Public routes
+
 router.post("/register", register);
 router.post("/login", login);
 
-// Protected route
-router.get("/profile", authMiddleware, profile);
+router.get("/profile/:id", authMiddleware, profile);
 
 export default router;

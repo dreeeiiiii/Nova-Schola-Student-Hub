@@ -1,9 +1,6 @@
-import { User } from "../models/user.model.js";
+import { query } from "../db.js";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
-
-// In-memory user store (replace later with DB)
-const users: User[] = [];
 
 export const UserService = {
   async create(
@@ -11,44 +8,50 @@ export const UserService = {
     email: string,
     password: string,
     role: "student" | "admin" = "student"
-  ): Promise<Omit<User, "passwordHash">> {
-    const existing = users.find((u) => u.email === email.toLowerCase());
-    if (existing) throw new Error("Email already in use");
+  ) {
+    // Check if user with email exists
+    const existing = await query(
+      "SELECT id FROM users WHERE email = $1",
+      [email.toLowerCase()]
+    );
+    
+    if (existing && existing.rowCount && existing.rowCount > 0) {
+      throw new Error("Email already in use");
+    }
 
+    // Hash password
     const passwordHash = await bcrypt.hash(password, 8);
+    const id = uuidv4();
 
-    const user: User = {
-      id: uuidv4(),
-      name,
-      email: email.toLowerCase(),
-      passwordHash,
-      role,
-    };
+    // Insert user into database
+    await query(
+      `INSERT INTO users (id, name, email, password_hash, role) 
+       VALUES ($1, $2, $3, $4, $5)`,
+      [id, name, email.toLowerCase(), passwordHash, role]
+    );
 
-    users.push(user);
+    return { id, name, email: email.toLowerCase(), role };
+  },
 
-    // Return user without passwordHash
-    const { passwordHash: _, ...safeUser } = user;
+  async authenticate(email: string, password: string) {
+    const res = await query("SELECT * FROM users WHERE email = $1", [
+      email.toLowerCase(),
+    ]);
+    if (res.rowCount === 0) return null;
+
+    const user = res.rows[0];
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) return null;
+
+    const { password_hash, ...safeUser } = user;
     return safeUser;
   },
 
-  async authenticate(email: string, password: string): Promise<Omit<User, "passwordHash"> | null> {
-    const user = users.find((u) => u.email === email.toLowerCase());
-    if (!user) return null;
+  async findById(id: string) {
+    const res = await query("SELECT * FROM users WHERE id = $1", [id]);
+    if (res.rowCount === 0) return null;
 
-    const ok = await bcrypt.compare(password, user.passwordHash);
-    if (!ok) return null;
-
-    // Return safe user object
-    const { passwordHash: _, ...safeUser } = user;
-    return safeUser;
-  },
-
-  findById(id: string): Omit<User, "passwordHash"> | null {
-    const user = users.find((u) => u.id === id);
-    if (!user) return null;
-
-    const { passwordHash: _, ...safeUser } = user;
+    const { password_hash, ...safeUser } = res.rows[0];
     return safeUser;
   },
 };
