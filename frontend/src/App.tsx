@@ -138,9 +138,7 @@ const App = () => {
               <Route index element={<Announcements />} />
               <Route path="announcement" element={<Announcements />} />
               <Route path="contacts" element={<ContactsUI />} />
-              <Route path="message" 
-                  element={<MessagesPage />}>
-              </Route>
+             < Route path="message/*" element={<MessagesPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>
