@@ -5,7 +5,7 @@ import { Server as IOServer, Socket } from "socket.io";
 import jwt from "jsonwebtoken";
 
 // Controllers & Services
-import * as MessageController from "../src/controllers/chats/message.controller.js";
+// FIXED
 import {
   getUserById,
   getMessagesByChat,
@@ -13,8 +13,9 @@ import {
   getOrCreatePrivateChat,
   findChatsForUser,
   saveMessage,
-  Message, // ✅ Make sure this is imported
-} from "../src/services/chat.service.js";
+  Message
+} from "./services/chat.service.js";
+
 
 dotenv.config();
 
