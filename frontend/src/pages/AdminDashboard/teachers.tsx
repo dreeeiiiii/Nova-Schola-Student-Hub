@@ -49,7 +49,7 @@ const AdminTeachersPage: React.FC = () => {
   const adminToken =
     typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
 
-  const BASE_URL = "http://localhost:5000/api/admin/users/teachers";
+  const BASE_URL = `${import.meta.env.VITE_API_URL}/admin/users/teachers`;
 
   // Fetch all teachers
   const fetchTeachers = async () => {

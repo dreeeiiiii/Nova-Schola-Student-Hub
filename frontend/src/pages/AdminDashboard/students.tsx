@@ -47,7 +47,7 @@ const AdminStudentsPage: React.FC = () => {
 
   const adminToken =
     typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
-  const BASE_URL = "http://localhost:5000/api/admin/users/students";
+  const BASE_URL = `${import.meta.env.VITE_API_URL}/admin/users/students`;
 
   const courses = [
     { label: "Bachelor of Science in Information System", value: "BSIS" },
