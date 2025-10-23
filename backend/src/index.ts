@@ -26,8 +26,8 @@ function setupSocket(server: http.Server) {
   const io = new IOServer(server, {
     cors: {
       origin: [
-        process.env.FRONTEND_URL || "http://localhost:5173",
-        "http://localhost:5173",
+        process.env.FRONTEND_URL || "https://nova-schola-student-hub.vercel.app",
+
       ],
       methods: ["GET", "POST"],
       credentials: true,
