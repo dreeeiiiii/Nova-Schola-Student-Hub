@@ -1,4 +1,4 @@
-// src/controllers/messages.controller.ts
+
 import { Response } from "express";
 import { AuthedRequest } from "../../middleware/auth.middleware.js";
 import * as ChatService from "../../services/chat.service.js";
