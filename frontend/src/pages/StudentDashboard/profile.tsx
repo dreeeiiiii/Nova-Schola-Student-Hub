@@ -35,7 +35,7 @@ const ProfilePage: React.FC = () => {
         setProfile(sanitizedProfile);
       }
     } catch {
-      // ignore errors
+      // ignore errors silently or consider showing error UI
     } finally {
       setLoading(false);
     }
@@ -71,31 +71,41 @@ const ProfilePage: React.FC = () => {
         setIsEditing(false);
         setModal({ type: "success", message: "Profile updated successfully!" });
       } else {
-        setModal({ type: "error", message: "Failed to update profile: " + json.message });
+        setModal({ type: "error", message: "Failed to update profile: " + (json.message || "Unknown error") });
       }
     } catch {
       setModal({ type: "error", message: "An error occurred while updating profile." });
     } finally {
       setSaving(false);
+      // Clear modal after 2.5 seconds
       setTimeout(() => setModal(null), 2500);
     }
   };
 
   if (loading)
-    return <div className="flex items-center justify-center min-h-screen text-gray-500">Loading profile...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-500">
+        Loading profile...
+      </div>
+    );
 
   if (!profile)
-    return <div className="flex items-center justify-center min-h-screen text-red-500">No profile data found.</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen text-red-500">
+        No profile data found.
+      </div>
+    );
 
-  // Limit initials size and spacing to avoid oversized look
+  // Create initials for avatar
   const initials = profile.name
     .split(" ")
     .map((n) => n[0])
     .join("")
-    .slice(0, 3); // max 3 letters
+    .slice(0, 3);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-blue-50 to-purple-100 flex flex-col items-center p-4 md:p-8">
+      {/* Modal message */}
       {modal && (
         <div className="fixed inset-0 flex items-center justify-center bg-white/30 backdrop-blur-md z-50">
           <div
@@ -110,27 +120,28 @@ const ProfilePage: React.FC = () => {
         </div>
       )}
 
-      <header className="w-full max-w-4xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-2xl shadow-lg p-6 md:p-8 mb-6 md:mb-8 flex items-center gap-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-28 h-28 md:w-36 md:h-36 bg-white/10 rounded-full blur-2xl" />
+      {/* Header */}
+      <header className="w-full max-w-4xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-2xl shadow-lg p-6 md:p-8 mb-6 md:mb-8 flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
         <div
-          className="flex items-center justify-center rounded-full bg-white/25 border-2 border-white text-2xl md:text-3xl font-semibold text-white min-w-[64px] min-h-[64px]"
+          className="flex items-center justify-center rounded-full bg-white/25 border-2 border-white text-2xl md:text-3xl font-semibold text-white min-w-[64px] min-h-[64px] mb-4 md:mb-0"
           title={profile.name}
         >
           {initials}
         </div>
         <div className="flex-1 text-center md:text-left">
-          <h1 className="text-2xl md:text-3xl font-bold truncate">{profile.name}</h1>
-          <p className="text-sm text-indigo-100 mt-1 truncate">{profile.department}</p>
-          <p className="text-xs text-indigo-200 mt-0.5 truncate">NST College — {profile.yearlevel}</p>
+          <h1 className="text-2xl md:text-3xl font-bold break-words">{profile.name}</h1>
+          <p className="text-sm text-indigo-100 mt-1 break-words">{profile.department}</p>
+          <p className="text-xs text-indigo-200 mt-0.5 break-words">NST College — {profile.yearlevel}</p>
         </div>
         <button
           onClick={() => setIsEditing(!isEditing)}
-          className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full text-sm font-medium transition"
+          className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full text-sm font-medium transition self-start md:self-center"
         >
           {isEditing ? "Cancel" : "Edit Profile"}
         </button>
       </header>
 
+      {/* Profile details */}
       <section className="w-full max-w-4xl bg-white rounded-2xl shadow-md p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm md:text-base">
         {Object.entries(profile).map(([key, value]) => {
           if (key === "id" || key === "status") return null;
@@ -148,7 +159,9 @@ const ProfilePage: React.FC = () => {
 
           return (
             <div key={key}>
-              <label className="text-xs md:text-sm text-gray-500 capitalize mb-1 block">{key.replace(/([A-Z])/g, " $1")}</label>
+              <label className="text-xs md:text-sm text-gray-500 capitalize mb-1 block">
+                {key.replace(/([A-Z])/g, " $1")}
+              </label>
               {isEditing && !isReadOnly ? (
                 <input
                   type="text"
@@ -166,6 +179,7 @@ const ProfilePage: React.FC = () => {
         })}
       </section>
 
+      {/* Save button */}
       {isEditing && (
         <div className="w-full max-w-4xl flex justify-end mt-6">
           <button
@@ -203,6 +217,7 @@ const ProfilePage: React.FC = () => {
         </div>
       )}
 
+      {/* Footer */}
       <footer className="w-full max-w-4xl text-center mt-8 text-xs text-gray-400 select-none">
         © 2025 NST Student Hub — All rights reserved.
       </footer>

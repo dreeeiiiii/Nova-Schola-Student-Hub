@@ -48,6 +48,7 @@ import SystemMaintenancePage from "./pages/AdminDashboard/system-maintenance";
 import AdminSettingsPage from "./pages/AdminDashboard/settings";
 import AdminDashboard from "./pages/AdminDashboard/dashboard";
 import {MessagesPage} from "./pages/StudentDashboard/message";
+import  Connect  from "./pages/TeacherDashboard/connect";
 
 
 
@@ -137,10 +138,9 @@ const App = () => {
               <Route index element={<Announcements />} />
               <Route path="announcement" element={<Announcements />} />
               <Route path="contacts" element={<ContactsUI />} />
-
-              <Route path="message" element={<MessagesPage />}>
+              <Route path="message" 
+                  element={<MessagesPage />}>
               </Route>
-
               <Route path="settings" element={<SettingsPage />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>
@@ -150,6 +150,7 @@ const App = () => {
               <Route index element={<TeacherAnnouncements />} />
               <Route path="announcements" element={<TeacherAnnouncements />} />
               <Route path="messages" element={<TeacherMessages />} />
+              <Route path="connect" element={<Connect />} />
               <Route path="profile" element={<TeacherProfile />} />
               <Route path="settings" element={<TeacherSettings />} />
             </Route>

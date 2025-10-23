@@ -1,53 +1,88 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Bell, MessageSquare, Users, Settings } from "lucide-react";
 
-const sidebarItems = [
-  { name: "Announcements", icon: Bell, path: "/student/announcement", count: 3 },
-  { name: "Messages", icon: MessageSquare, path: "/student/message", count: 3 },
-  { name: "Contacts", icon: Users, path: "/student/contacts" },
-  { name: "Settings", icon: Settings, path: "/student/settings" },
-  { name: "Profile", icon: Settings, path: "/student/profile" },
-];
+interface SidebarProps {
+  sidebarOpen: boolean;
+  setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}
 
-export const Sidebar: React.FC = () => {
+function parseToken(token: string | null) {
+  if (!token) return { id: "", name: "User", department: "" };
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return {
+      id: payload.id,
+      name: payload.name || "User",
+      department: payload.department || "",
+    };
+  } catch {
+    return { id: "", name: "User", department: "" };
+  }
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const token = localStorage.getItem("studentToken");
+  const { name, department, id: userId } = parseToken(token);
+
+  const [unreadCount, setUnreadCount] = useState<number | undefined>(0);
+
+  // ---------------- Fetch unread message count ----------------
+  useEffect(() => {
+    if (!token || !userId) return;
+
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch("/api/lastChats/unread-count", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("Failed to fetch unread count");
+        const data = await res.json();
+        setUnreadCount(data.count > 0 ? data.count : undefined);
+      } catch (err) {
+        console.error("Unread fetch error:", err);
+      }
+    };
+
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 10000); // refresh every 10s
+    return () => clearInterval(interval);
+  }, [token, userId]);
+
+  const sidebarItems = [
+    { name: "Announcements", icon: Bell, path: "/student/announcement" },
+    { name: "Messages", icon: MessageSquare, path: "/student/message", count: unreadCount },
+    { name: "Contacts", icon: Users, path: "/student/contacts" },
+    { name: "Settings", icon: Settings, path: "/student/settings" },
+    { name: "Profile", icon: Settings, path: "/student/profile" },
+  ];
 
   const activeTab =
-    sidebarItems.find((item) => location.pathname.startsWith(item.path))?.name ||
-    "Announcements";
+    sidebarItems.find((item) => location.pathname.startsWith(item.path))?.name || "Announcements";
 
   const handleTabClick = (path: string) => {
     if (location.pathname !== path) navigate(path);
-    setSidebarOpen(false); // close sidebar on small screens after navigation
+
+    // hide unread badge when opening Messages
+    if (path === "/student/message") setUnreadCount(undefined);
+
+    setSidebarOpen(false);
   };
+
+  const initials = name
+    ? name
+        .split(" ")
+        .map((n: string[]) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "US";
 
   return (
     <>
-      {/* Hamburger button - visible only on small screens */}
-      <button
-        className="fixed top-10 right-4 z-50 p-2 rounded-md bg-white shadow-md md:hidden focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        aria-label="Toggle Sidebar"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-      >
-        <svg
-          className="w-6 h-6 text-indigo-600"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          viewBox="0 0 24 24"
-        >
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-      </button>
-
-      {/* Sidebar overlay on small screens */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-40 z-40 md:hidden"
@@ -56,10 +91,9 @@ export const Sidebar: React.FC = () => {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full bg-white shadow-lg z-50 w-64 transform transition-transform duration-300
+          fixed top-0 left-0 h-full bg-white shadow-lg z-50 w-64 transform transition-transform duration-300 mt-10
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0 md:static md:shadow-none md:flex md:flex-col
         `}
@@ -102,11 +136,11 @@ export const Sidebar: React.FC = () => {
         <div className="p-6 border-t border-gray-200 bg-white w-full my-4 md:my-0">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
-              SJ
+              {initials}
             </div>
             <div>
-              <p className="text-sm font-semibold">Sarah Johnson</p>
-              <p className="text-xs text-gray-500">Computer Science</p>
+              <p className="text-sm font-semibold">{name}</p>
+              <p className="text-xs text-gray-500">{department || "No department"}</p>
             </div>
           </div>
         </div>

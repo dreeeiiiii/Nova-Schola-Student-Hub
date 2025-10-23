@@ -25,18 +25,18 @@ export default function TeacherLogin({ onLoginSuccess }: TeacherLoginProps): JSX
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/auth/adminlogin",
+        "http://localhost:5000/api/auth/teacher/login",
         { email, password }
       );
 
       if (response.data.success && response.data.token) {
-        localStorage.setItem("adminToken", response.data.token);
+        localStorage.setItem("teacherToken", response.data.token);
 
         // ✅ Trigger navbar update in App.tsx
         onLoginSuccess?.();
 
         // ✅ Redirect after login
-        navigate("/teacher/dashboard");
+        navigate("/teacher/announcements");
       } else {
         setError(response.data.message || "Invalid credentials");
       }
