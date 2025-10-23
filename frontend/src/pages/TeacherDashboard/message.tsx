@@ -33,12 +33,12 @@ function parseToken(token: string | null) {
 // ---------------- API HELPERS ----------------
 const API = {
   fetchUsers: async (token: string): Promise<User[]> => {
-    const res = await fetch("/api/contacts", { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch("/contacts", { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) throw new Error("Failed to fetch users");
     return res.json();
   },
   fetchLastChats: async (token: string) => {
-    const res = await fetch("/api/lastChats/last-messages", { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch("/lastChats/last-messages", { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) throw new Error("Failed to fetch last chats");
     return res.json();
   },
@@ -164,7 +164,7 @@ export const TeacherMessages: React.FC = () => {
     
       socket.on("message", handleMessage);
       return () => {
-        socket.off("message", handleMessage);
+       socket.off("message", handleMessage);
       };
     }, [currentUserId, selectedUser?.id]);
     
