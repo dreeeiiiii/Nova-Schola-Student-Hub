@@ -48,4 +48,13 @@ router.put("/teachers/:id", authMiddleware, requireAdmin, updateTeacher);
 router.delete("/teachers/:id", authMiddleware, requireAdmin, deleteTeacher);
 router.patch("/teachers/:id/status", authMiddleware, requireAdmin, toggleTeacherStatus);
 
+
+
+router.get("/teachers", authMiddleware, requireAdmin, getAllTeachers);
+router.get("/teacher/:id", authMiddleware, getTeacherById);
+router.post("/teachers", authMiddleware, requireAdmin, createTeacher);
+router.put("/teacher/:id", authMiddleware, updateTeacher);
+router.delete("/teachers/:id", authMiddleware, requireAdmin, deleteTeacher);
+router.patch("/teachers/:id/status", authMiddleware, requireAdmin, toggleTeacherStatus);
+
 export default router;

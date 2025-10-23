@@ -3,14 +3,17 @@ import { UserService } from "../services/user.service.js";
 import { sign } from "../utils/jwt.js";
 
 interface AuthedRequest extends Request {
-  user?: { id: string; email: string };
+  user?: { id: string; email: string; name?: string };
 }
+
+/* ---------------- REGISTRATION ---------------- */
 
 export async function StudentRegister(req: Request, res: Response) {
   const { firstName, lastName, email, studentId, password, yearLevel, department } = req.body;
   if (!firstName || !lastName || !email || !studentId || !password || !yearLevel || !department) {
     return res.status(400).json({ error: "Missing required fields" });
   }
+
   const name = `${firstName} ${lastName}`.trim();
   try {
     const user = await UserService.createStudent(name, email, password, studentId, yearLevel, department);
@@ -25,6 +28,7 @@ export async function TeacherRegister(req: Request, res: Response) {
   if (!firstName || !lastName || !email || !employeeId || !password || !department || !specialization) {
     return res.status(400).json({ error: "Missing required fields" });
   }
+
   const name = `${firstName} ${lastName}`.trim();
   try {
     const teacher = await UserService.createTeacher(name, email, password, employeeId, department, specialization);
@@ -39,6 +43,7 @@ export async function AdminRegister(req: Request, res: Response) {
   if (!firstName || !lastName || !email || !password) {
     return res.status(400).json({ error: "Missing required fields" });
   }
+
   const name = `${firstName} ${lastName}`.trim();
   try {
     const admin = await UserService.createAdmin(name, email, password, yearLevel, department);
@@ -48,14 +53,26 @@ export async function AdminRegister(req: Request, res: Response) {
   }
 }
 
+/* ---------------- LOGIN ---------------- */
+
 export async function StudentLogin(req: Request, res: Response) {
   const { email, password } = req.body;
   if (!email || !password)
     return res.status(400).json({ message: "Please fill in all required fields." });
+
   try {
     const user = await UserService.authenticateStudent(email.toLowerCase(), password);
     if (!user) return res.status(401).json({ message: "Invalid email or password." });
-    const token = sign({ id: user.id, email: user.email, role: "student" }); // Include role
+
+    // Include name and department in the token
+    const token = sign({
+      id: user.id,
+      email: user.email,
+      role: "student",
+      name: user.name,
+      department: user.department, // added department
+    });
+
     res.json({ success: true, message: "Login successful", user, token });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -66,10 +83,19 @@ export async function TeacherLogin(req: Request, res: Response) {
   const { email, password } = req.body;
   if (!email || !password)
     return res.status(400).json({ message: "Please fill in all required fields." });
+
   try {
     const teacher = await UserService.authenticateTeacher(email.toLowerCase(), password);
     if (!teacher) return res.status(401).json({ message: "Invalid email or password." });
-    const token = sign({ id: teacher.id, email: teacher.email, role: "teacher" }); // Include role
+
+    const token = sign({
+      id: teacher.id,
+      email: teacher.email,
+      role: "teacher",
+      name: teacher.name,
+      department: teacher.department, // added department
+    });
+
     res.json({ success: true, message: "Login successful", teacher, token });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -80,19 +106,31 @@ export async function AdminLogin(req: Request, res: Response) {
   const { email, password } = req.body;
   if (!email || !password)
     return res.status(400).json({ message: "Please fill in all required fields." });
+
   try {
     const admin = await UserService.authenticateAdmin(email.toLowerCase(), password);
     if (!admin) return res.status(401).json({ message: "Invalid email or password." });
-    const token = sign({ id: admin.id, email: admin.email, role: "admin" }); // Include role
+
+    const token = sign({
+      id: admin.id,
+      email: admin.email,
+      role: "admin",
+      name: admin.name,
+      department: admin.department, // added department
+    });
+
     res.json({ success: true, message: "Login successful", admin, token });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }
 }
 
+/* ---------------- PROFILE ---------------- */
+
 export async function profile(req: AuthedRequest, res: Response) {
   const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
   try {
     const user = await UserService.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });

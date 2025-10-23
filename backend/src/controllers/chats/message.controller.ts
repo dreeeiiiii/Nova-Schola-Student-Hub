@@ -25,18 +25,24 @@ export async function listMessagesByChat(
 
     const limit = Math.min(parseInt(String(req.query.limit || 50), 10), 100);
     const offset = Math.max(parseInt(String(req.query.offset || 0), 10), 0);
+    const order = req.query.order === "asc" ? "asc" : "desc";
 
     if (!me) return res.status(401).json({ ok: false, error: "Unauthorized" });
     if (!chatId) return res.status(400).json({ ok: false, error: "Missing chatId" });
+    if (isNaN(Number(chatId))) return res.status(400).json({ ok: false, error: "Invalid chatId" });
 
     const isMember = await ChatService.isChatMember(chatId, me);
     if (!isMember) return res.status(403).json({ ok: false, error: "Forbidden" });
 
-    const raw = await ChatService.listMessagesByChat(chatId, { limit, offset });
+    const raw = await ChatService.listMessagesByChat(chatId, { limit, offset, order });
 
     const messages = raw.map((m) => ({
       id: m.id,
-      sender: m.senderId,
+      sender: {
+        id: m.senderId,
+        name: m.sender?.name || "Unknown",
+        avatar: m.sender?.avatar || null,
+      },
       text: m.text,
       timestamp: m.createdAt,
     }));
@@ -48,6 +54,7 @@ export async function listMessagesByChat(
     return res.status(500).json({ ok: false, error: message });
   }
 }
+
 
 /**
  * GET /api/messages/user/all

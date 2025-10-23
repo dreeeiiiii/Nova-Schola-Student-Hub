@@ -277,7 +277,7 @@ export const getTeacherById = async (req: Request, res: Response) => {
   }
 };
 
-// ✅ Create new teacher
+
 // ✅ Create new teacher — always mark as created by admin
 export const createTeacher = async (req: AuthedRequest, res: Response) => {
   const {

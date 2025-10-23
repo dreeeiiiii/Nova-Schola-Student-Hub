@@ -14,8 +14,10 @@ import userCrudRoutes from "./routes/users.profile.routes.js"; // ✅ admin/stud
 import dashboardRoutes from "./routes/admin/dashboard.routes.js";
 import violationRoutes from "./routes/admin/violations.routes.js";
 import reportRoutes from "./routes/admin/reports.routes.js";
+import teacherRoutes from "./routes/teacher/password.routes.js"
+import studentRoutes from "./routes/students/password.routes.js"
 
-// ---------------- Chat System Routes ----------------
+// ---------------- Chat System Routes ---------------  -
 import chatRoutes from "./routes/chats/chat.routes.js";
 import chatUserRoutes from "./routes/chats/users.routes.js";
 import messageRoutes from "./routes/chats/message.routes.js";
@@ -44,12 +46,14 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/announcements", announcementRoutes);
-
+app.use("/api/teachers", teacherRoutes);
+app.use("/api/students", studentRoutes);
 // 🧑‍💼 Admin + User Management
 app.use("/api/admin/users", userCrudRoutes); // ✅ teachers & students CRUD now under /api/admin/users
 app.use("/api/admin", dashboardRoutes);
 app.use("/api/admin/violations", violationRoutes);
 app.use("/api/admin/reports", reportRoutes);
+
 
 
 // 💬 Chat System

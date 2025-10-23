@@ -1,10 +1,17 @@
 import { query } from "../db.js";
 import { v4 as uuidv4 } from "uuid";
 
+/* ---------------- Types ---------------- */
 export interface Message {
   id: string;
   chatId: string;
   senderId: string;
+  sender: {
+    id: string;
+    name: string;
+    avatar: string | null;
+    role: "student" | "teacher";
+  };
   text: string;
   createdAt: string;
 }
@@ -42,8 +49,8 @@ async function findExactPrivateChat(
     ORDER BY c.last_updated DESC
     LIMIT 1
   `;
-  const res = await query(sql, [userAType, userAId, userBType, userBId]);
 
+  const res = await query(sql, [userAType, userAId, userBType, userBId]);
   if (res.rowCount && res.rows[0]) {
     const row = res.rows[0];
     return {
@@ -101,75 +108,113 @@ export async function saveMessage(chatId: string, senderId: string, text: string
 
   await query(`UPDATE chats SET last_updated = $1 WHERE id = $2`, [now, chatId]);
 
-  return { id, chatId, senderId, text, createdAt: now.toISOString() };
+  return {
+    id,
+    chatId,
+    senderId,
+    sender: {
+      id: senderId,
+      name: "",
+      avatar: null,
+      role: "student", // default, will be replaced when fetching
+    },
+    text,
+    createdAt: now.toISOString(),
+  };
 }
 
 /**
- * ✅ Fixed version — ensures all 3 params are always provided (limit + offset defaults)
+ * ✅ Fetch all messages in a chat with proper sender info
  */
 export async function listMessagesByChat(
   chatId: string,
-  opts: { limit?: number; offset?: number } = {}
+  opts: { limit?: number; offset?: number; order?: "asc" | "desc" } = {}
 ): Promise<Message[]> {
+
   const limit = opts.limit ?? 50;
   const offset = opts.offset ?? 0;
+  const order = opts.order === "desc" ? "DESC" : "ASC";
 
   const res = await query(
-    `SELECT id, chat_id, sender_id, text, created_at
-     FROM messages
-     WHERE chat_id = $1
-     ORDER BY created_at ASC
-     LIMIT $2 OFFSET $3`,
-    [chatId, limit, offset] // ✅ FIX: now provides all 3 parameters
+    `
+    SELECT m.id, m.chat_id, m.sender_id, m.text, m.created_at,
+           COALESCE(s.name, t.name) AS sender_name,
+           COALESCE(s.avatar, LEFT(COALESCE(s.name, t.name),1)) AS sender_avatar,
+           CASE 
+             WHEN s.id IS NOT NULL THEN 'student'
+             WHEN t.id IS NOT NULL THEN 'teacher'
+           END AS sender_role
+    FROM messages m
+    LEFT JOIN students s ON m.sender_id = s.id
+    LEFT JOIN teachers t ON m.sender_id = t.id
+    WHERE m.chat_id = $1
+    ORDER BY m.created_at ${order}
+    LIMIT $2 OFFSET $3
+    `,
+    [chatId, limit, offset]
   );
 
   return res.rows.map((r: any) => ({
     id: r.id,
     chatId: r.chat_id,
     senderId: r.sender_id,
+    sender: {
+      id: r.sender_id,
+      name: r.sender_name,
+      avatar: r.sender_avatar,
+      role: r.sender_role,
+    },
     text: r.text,
     createdAt: new Date(r.created_at).toISOString(),
   }));
 }
 
+
 export async function getMessagesByChat(chatId: string): Promise<Message[]> {
-  // ✅ Pass defaults explicitly
   return listMessagesByChat(chatId, { limit: 100, offset: 0 });
 }
 
 /* ---------------- Users ---------------- */
 export async function searchUsers(queryStr: string) {
   const res = await query(
-    `SELECT id, name, email, 'student' AS role FROM students
-     WHERE LOWER(name) LIKE LOWER($1) OR LOWER(email) LIKE LOWER($1)
-     UNION
-     SELECT id, name, email, 'teacher' AS role FROM teachers
-     WHERE LOWER(name) LIKE LOWER($1) OR LOWER(email) LIKE LOWER($1)`,
+    `
+    SELECT id, name, email, avatar, 'student' AS role FROM students
+    WHERE LOWER(name) LIKE LOWER($1) OR LOWER(email) LIKE LOWER($1)
+    UNION
+    SELECT id, name, email, avatar, 'teacher' AS role FROM teachers
+    WHERE LOWER(name) LIKE LOWER($1) OR LOWER(email) LIKE LOWER($1)
+    `,
     [`%${queryStr}%`]
   );
   return res.rows;
 }
-
 export async function getUserById(userId: string) {
   const res = await query(
-    `SELECT id, name, email, 'student' AS role FROM students WHERE id = $1
-     UNION
-     SELECT id, name, email, 'teacher' AS role FROM teachers WHERE id = $1`,
+    `
+    SELECT id, name, email, COALESCE(avatar, LEFT(name,1)) AS avatar, 'student' AS role FROM students WHERE id = $1
+    UNION
+    SELECT id, name, email, COALESCE(avatar, LEFT(name,1)) AS avatar, 'teacher' AS role FROM teachers WHERE id = $1
+    `,
     [userId]
   );
+
   return res.rows?.[0] || null;
 }
 
+
+/* ---------------- Chat Lists ---------------- */
 export async function findChatsForUser(
   memberType: "student" | "teacher",
   memberId: string
 ): Promise<Chat[]> {
   const res = await query(
-    `SELECT c.id, c.last_updated, ARRAY_AGG(cm.member_id) AS members
-     FROM chats c
-     JOIN chat_members cm ON cm.chat_id = c.id
-     WHERE cm.member_type = $1 AND cm.member_id = $2
-     GROUP BY c.id`,
+    `
+    SELECT c.id, c.last_updated, ARRAY_AGG(cm.member_id) AS members
+    FROM chats c
+    JOIN chat_members cm ON cm.chat_id = c.id
+    WHERE cm.member_type = $1 AND cm.member_id = $2
+    GROUP BY c.id
+    `,
     [memberType, memberId]
   );
 
@@ -188,20 +233,25 @@ export async function getMessagesForUser(
   memberId: string
 ): Promise<Message[]> {
   const chatsRes = await query(
-    `SELECT DISTINCT c.id
-     FROM chats c
-     JOIN chat_members cm ON cm.chat_id = c.id
-     WHERE cm.member_type = $1 AND cm.member_id = $2`,
+    `
+    SELECT DISTINCT c.id
+    FROM chats c
+    JOIN chat_members cm ON cm.chat_id = c.id
+    WHERE cm.member_type = $1 AND cm.member_id = $2
+    `,
     [memberType, memberId]
   );
+
   const chatIds: string[] = (chatsRes.rows || []).map((r: any) => r.id);
   if (chatIds.length === 0) return [];
 
   const res = await query(
-    `SELECT id, chat_id, sender_id, text, created_at
-     FROM messages
-     WHERE chat_id = ANY($1)
-     ORDER BY created_at DESC`,
+    `
+    SELECT id, chat_id, sender_id, text, created_at
+    FROM messages
+    WHERE chat_id = ANY($1)
+    ORDER BY created_at DESC
+    `,
     [chatIds]
   );
 
@@ -209,6 +259,12 @@ export async function getMessagesForUser(
     id: r.id,
     chatId: r.chat_id,
     senderId: r.sender_id,
+    sender: {
+      id: r.sender_id,
+      name: "",
+      avatar: null,
+      role: "student",
+    },
     text: r.text,
     createdAt: new Date(r.created_at).toISOString(),
   }));

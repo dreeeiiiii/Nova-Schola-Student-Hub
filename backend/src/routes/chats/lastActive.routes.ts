@@ -55,4 +55,31 @@ router.get("/last-messages", authMiddleware, async (req: AuthedRequest, res: Res
   }
 });
 
+// Add this below your existing /last-messages route
+
+router.get("/unread-count", authMiddleware, async (req: AuthedRequest, res: Response) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+    const userId = req.user.id;
+
+    // Count messages in chats where the user is a member, but not sent by them
+    // Assumes messages table has sender_id, chat_id
+    const query = `
+      SELECT COUNT(*) AS count
+      FROM messages m
+      JOIN chat_members cm ON m.chat_id = cm.chat_id
+      WHERE cm.member_id = $1
+        AND m.sender_id != $1
+    `;
+
+    const { rows } = await pool.query(query, [userId]);
+
+    res.json({ count: parseInt(rows[0].count, 10) });
+  } catch (err) {
+    console.error("Unread count error:", err);
+    res.status(500).json({ error: "Failed to fetch unread count" });
+  }
+});
+
+
 export default router;

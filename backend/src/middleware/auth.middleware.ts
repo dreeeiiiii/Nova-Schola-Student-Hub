@@ -5,8 +5,10 @@ export interface JwtPayload {
   id: string | number;
   email: string;
   role: "student" | "admin" | "teacher";
+  department?:string;
   iat?: number;
   exp?: number;
+  
 }
 
 export interface AuthedRequest extends Request {

@@ -12,6 +12,8 @@ import {
   isChatMember,
   getOrCreatePrivateChat,
   findChatsForUser,
+  saveMessage,
+  Message, // ✅ Make sure this is imported
 } from "../src/services/chat.service.js";
 
 dotenv.config();
@@ -24,7 +26,7 @@ function setupSocket(server: http.Server) {
     cors: {
       origin: [
         process.env.FRONTEND_URL || "http://localhost:5173",
-        "http://localhost:5173"
+        "http://localhost:5173",
       ],
       methods: ["GET", "POST"],
       credentials: true,
@@ -56,10 +58,10 @@ function setupSocket(server: http.Server) {
     const userRole = socket.data.role as "student" | "teacher" | "admin";
     console.log(`✅ User connected: ${userId} (${userRole})`);
 
-    // ✅ Join personal user room for direct events
+    // Join personal room
     socket.join(`user:${userId}`);
 
-    // ✅ Join all existing chat rooms
+    // Join existing chat rooms
     if (userRole === "student" || userRole === "teacher") {
       try {
         const chats = await findChatsForUser(userRole, userId);
@@ -73,50 +75,72 @@ function setupSocket(server: http.Server) {
     /* ---------------- Get Message History ---------------- */
     socket.on("getMessageHistory", async (payload, ack) => {
       try {
-        let messages = [];
-
-        if (payload?.chatId) {
-          const allowed = await isChatMember(payload.chatId, userId);
-          if (!allowed) return ack?.({ status: "error", error: "Not allowed in chat" });
-
-          messages = await getMessagesByChat(payload.chatId);
-        } else if (payload?.userId) {
-          if (userRole !== "student" && userRole !== "teacher") {
-            return ack?.({ status: "error", error: "Admins cannot chat directly" });
-          }
-
+        if (!ack) return;
+    
+        let chatId: string | undefined = payload?.chatId;
+        let messages: Message[] = [];
+    
+        // If userId is provided, find or create private chat
+        if (payload?.userId) {
           const peer = await getUserById(payload.userId);
-          if (!peer) return ack?.({ status: "error", error: "User not found" });
-
-          const peerRole: "student" | "teacher" =
-            peer.role === "student" || peer.role === "teacher" ? peer.role : "student";
-
-          const chatUserRole: "student" | "teacher" = userRole;
-          const chat = await getOrCreatePrivateChat(chatUserRole, userId, peerRole, peer.id);
-          messages = await getMessagesByChat(chat.id);
-
-          socket.join(chat.id);
-          return ack?.({ status: "ok", chatId: chat.id, messages });
-        } else {
-          return ack?.({ status: "error", error: "Invalid payload" });
+          if (!peer) return ack({ status: "error", error: "User not found" });
+    
+          // Only students or teachers can start chats
+          if (!["student", "teacher"].includes(userRole)) {
+            return ack({ status: "error", error: "Admins cannot start chats" });
+          }
+    
+          // Narrow types for TS
+          const currentRole = userRole as "student" | "teacher";
+          const peerRole = peer.role as "student" | "teacher";
+    
+          const chat = await getOrCreatePrivateChat(currentRole, userId, peerRole, peer.id);
+          chatId = chat.id;
+          socket.join(chatId);
         }
-
-        socket.emit("messageHistory", messages);
-        ack?.({ status: "ok", messages });
+    
+        if (chatId) {
+          const allowed = await isChatMember(chatId, userId);
+          if (!allowed) return ack({ status: "error", error: "Not allowed in chat" });
+    
+          messages = await getMessagesByChat(chatId);
+        }
+    
+        // Always respond, even if empty
+        ack({ status: "ok", chatId: chatId || null, messages });
       } catch (err) {
         console.error("getMessageHistory error:", err);
-        ack?.({ status: "error", error: "Server error" });
+        ack({ status: "error", error: "Server error" });
       }
     });
+    
+    
 
     /* ---------------- Send Message ---------------- */
-    socket.on("sendMessage", (data, callback) => {
+    socket.on("sendMessage", async (data, callback) => {
       try {
-        MessageController.handleSendMessage(socket, io, data, userId, callback);
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Unknown error";
-        console.error("Error handling sendMessage:", message);
-        callback?.({ status: "error", error: message });
+        const chatId = data.chatId;
+        const content = data.content?.trim();
+        if (!chatId || !content) return callback?.({ status: "error", error: "Invalid data" });
+
+        const allowed = await isChatMember(chatId, userId);
+        if (!allowed) return callback?.({ status: "error", error: "Not allowed in chat" });
+
+        // Save message
+        const msg = await saveMessage(chatId, userId, content);
+
+        // Broadcast to all in chat
+        io.to(chatId).emit("message", {
+          id: msg.id,
+          sender_id: msg.senderId,
+          text: msg.text,
+          created_at: msg.createdAt,
+        });
+
+        callback?.({ status: "ok", message: msg });
+      } catch (err: any) {
+        console.error("sendMessage error:", err);
+        callback?.({ status: "error", error: err.message || "Server error" });
       }
     });
 
