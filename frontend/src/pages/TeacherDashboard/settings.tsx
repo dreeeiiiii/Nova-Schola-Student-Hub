@@ -22,7 +22,7 @@ export const TeacherSettings: React.FC = () => {
 
     const fetchSettings = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/teachers/${teacherId}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/teachers/${teacherId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -73,7 +73,7 @@ export const TeacherSettings: React.FC = () => {
       }
 
       // Update dark mode
-      await fetch(`http://localhost:5000/api/teachers/${teacherId}`, {
+      await fetch(`${import.meta.env.VITE_API_URL}/teachers/${teacherId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

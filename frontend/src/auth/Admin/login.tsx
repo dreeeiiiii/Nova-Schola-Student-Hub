@@ -22,10 +22,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
     setError(null);
 
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/admin/login", {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/auth/admin/login`,
+        { email, password }
+      );
 
       if (response.data.success) {
         localStorage.setItem("adminToken", response.data.token);

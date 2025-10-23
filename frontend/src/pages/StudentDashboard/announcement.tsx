@@ -48,7 +48,7 @@ export default function AnnouncementOfTheMonth(): JSX.Element {
   const [current, setCurrent] = useState<number>(0);
 
   const slideInterval = useRef<number | null>(null);
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchAnnouncements = async () => {

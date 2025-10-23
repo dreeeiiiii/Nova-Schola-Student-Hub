@@ -17,6 +17,7 @@ import {
   type PieLabelRenderProps,
 } from "recharts";
 
+// ----------------- Types -----------------
 interface Stats {
   totalStudents: number;
   totalTeachers: number;
@@ -52,12 +53,15 @@ const AdminDashboard: React.FC = () => {
   const [showMoreLoading, setShowMoreLoading] = useState(false);
 
   const adminToken = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
-  const BASE_URL = "http://localhost:5000/api/admin/dashboard/overview";
+  const BASE_URL = `${import.meta.env.VITE_API_URL}/admin/dashboard/overview`;
 
+  // ---------------- Fetch Dashboard ----------------
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(BASE_URL, { headers: { Authorization: `Bearer ${adminToken}` } });
+      const res = await axios.get(BASE_URL, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
       setStats(res.data.stats);
       setUserDistribution(res.data.userDistribution ?? []);
       setRecentActivities(res.data.recentActivities ?? []);
@@ -85,6 +89,7 @@ const AdminDashboard: React.FC = () => {
     );
   }
 
+  // ---------------- Pie chart logic ----------------
   const processedData =
     userDistribution.length > 0
       ? userDistribution.map((d) => ({
@@ -161,7 +166,6 @@ const AdminDashboard: React.FC = () => {
                     const realValue = userDistribution.find((d) => d.name === name)?.value ?? 0;
                     return `${name} ${realValue === 0 ? "0%" : `${(percent! * 100).toFixed(0)}%`}`;
                   }}
-                  
                 >
                   {processedData.map((entry, index) => (
                     <Cell
@@ -193,7 +197,7 @@ const AdminDashboard: React.FC = () => {
                       <p className="font-medium text-gray-800">{activity.type}</p>
                       <p className="text-sm text-gray-500">{activity.description}</p>
                     </div>
-                    <span className="text-xs text-gray-400">{activity.date}</span>
+                    <span className="text-xs text-gray-400">{new Date(activity.date).toLocaleString()}</span>
                   </li>
                 ))}
               </ul>
@@ -209,13 +213,7 @@ const AdminDashboard: React.FC = () => {
                 className="w-full sm:w-2/3 px-3 py-2 shadow rounded-xl bg-blue-600 text-white font-semibold flex items-center gap-2 justify-center hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-400"
               >
                 {showMoreLoading ? (
-                  <span className="flex items-center opacity-90">
-                    <svg className="animate-spin h-5 w-5 mr-2 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4l-3 3 3 3H4z" />
-                    </svg>
-                    Loading...
-                  </span>
+                  <span className="flex items-center opacity-90 animate-pulse">Loading...</span>
                 ) : (
                   <>
                     <RefreshCcw size={18} /> Show More

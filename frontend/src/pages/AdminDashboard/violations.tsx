@@ -27,7 +27,7 @@ const AdminViolationsPage: React.FC = () => {
   const [filter, setFilter] = useState<"All" | "Student" | "Teacher">("All");
   const adminToken =
     typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
-  const BASE_URL = "http://localhost:5000/api/admin/violations";
+  const BASE_URL = `${import.meta.env.VITE_API_URL}/admin/violations`;
 
   const fetchViolations = async () => {
     try {

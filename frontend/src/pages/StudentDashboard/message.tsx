@@ -74,7 +74,7 @@ export const MessagesPage: React.FC = () => {
   useEffect(() => {
     if (!token) return;
 
-    const socket = io("http://localhost:5000", { auth: { token } });
+    const socket = io(import.meta.env.VITE_SOCKET_API_URL, { auth: { token } });
     socketRef.current = socket;
 
     socket.on("connect", () => console.log("Socket connected!", socket.id));
@@ -144,8 +144,8 @@ export const MessagesPage: React.FC = () => {
       try {
         const headers: HeadersInit = { Authorization: `Bearer ${token}` };
         const [resLast, resUsers] = await Promise.all([
-          fetch("/api/lastChats/last-messages", { headers }),
-          fetch("/api/contacts", { headers }),
+          fetch("/lastChats/last-messages", { headers }),
+          fetch("/contacts", { headers }),
         ]);
         if (!resLast.ok || !resUsers.ok) throw new Error("Failed to fetch");
 

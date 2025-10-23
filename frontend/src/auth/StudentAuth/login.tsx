@@ -28,10 +28,13 @@ export function Login({ onBack, onSignup, onLoginSuccess }: LoginProps) {
     }
 
     try {
-      const { data } = await axios.post("http://localhost:5000/api/auth/student/login", {
-        email: trimmedEmail,
-        password,
-      });
+      const { data } = await axios.post(
+        `${import.meta.env.VITE_API_URL}/auth/student/login`,
+        {
+          email: trimmedEmail,
+          password,
+        }
+      );
 
       if (data.token) {
         localStorage.setItem("studentToken", data.token);

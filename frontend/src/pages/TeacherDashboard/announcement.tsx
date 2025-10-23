@@ -91,7 +91,7 @@ export const TeacherAnnouncements: React.FC = () => {
       try {
         setLoading(true);
         const token = localStorage.getItem("teacherToken");
-        const res = await fetch("http://localhost:5000/api/announcements", {
+        const res = await fetch("/announcements", {
           method: "GET",
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -132,13 +132,13 @@ export const TeacherAnnouncements: React.FC = () => {
 
       let res: Response;
       if (editingAnnouncementId) {
-        res = await fetch(`http://localhost:5000/api/announcements/${editingAnnouncementId}`, {
+        res = await fetch(`${import.meta.env.VITE_API_URL}/announcements/${editingAnnouncementId}`, {
           method: "PUT",
           headers: { Authorization: `Bearer ${token}` },
           body: form,
         });
       } else {
-        res = await fetch("http://localhost:5000/api/announcements", {
+        res = await fetch(`${import.meta.env.VITE_API_URL}/announcements`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
           body: form,
@@ -206,7 +206,7 @@ export const TeacherAnnouncements: React.FC = () => {
     if (!window.confirm("Are you sure you want to delete this announcement?")) return;
     try {
       const token = localStorage.getItem("teacherToken");
-      const res = await fetch(`http://localhost:5000/api/announcements/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/announcements/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

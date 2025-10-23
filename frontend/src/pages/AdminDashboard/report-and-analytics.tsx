@@ -65,7 +65,7 @@ const AdminReportAnalyticsPage: React.FC = () => {
     { name: string; value: number }[]
   >([]);
 
-  const BASE_URL = "http://localhost:5000/api/admin/reports/analytics";
+  const BASE_URL = `${import.meta.env.VITE_API_URL}/admin/reports/analytics`;
   const adminToken = typeof window !== "undefined"
     ? localStorage.getItem("adminToken")
     : null;

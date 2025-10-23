@@ -103,7 +103,7 @@ export const TeacherMessages: React.FC = () => {
   useEffect(() => {
     if (!token) return;
 
-    const socket = io("http://localhost:5000", { auth: { token } });
+    const socket = io(import.meta.env.VITE_SOCKET_API_URL, { auth: { token } });
     socketRef.current = socket;
 
     socket.on("connect", () => console.log("Socket connected:", socket.id));

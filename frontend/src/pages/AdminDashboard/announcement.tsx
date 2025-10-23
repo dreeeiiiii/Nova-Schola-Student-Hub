@@ -31,7 +31,7 @@ const AdminAnnouncementPage: React.FC = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [, setLoading] = useState(false);
 
-  const BASE_URL = "http://localhost:5000/api/announcements";
+  const BASE_URL = `${import.meta.env.VITE_API_URL}/announcements`;
   const adminToken =
     typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
 

@@ -27,8 +27,6 @@ export function Signup({ onBack, onLogin }: SignupProps) {
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
   const yearLevels = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
-
-  // ✅ Short codes align with backend course mapping
   const departments = [
     { label: "Bachelor of Science in Information System", value: "BSIS" },
     { label: "Bachelor of Science in Accounting Information Systems", value: "BSAIS" },
@@ -60,7 +58,7 @@ export function Signup({ onBack, onLogin }: SignupProps) {
       setLoading(true);
 
       const response = await axios.post(
-        "http://localhost:5000/api/auth/student/register",
+        `${import.meta.env.VITE_API_URL}/auth/student/register`,
         formData
       );
 
@@ -84,8 +82,7 @@ export function Signup({ onBack, onLogin }: SignupProps) {
         setShowErrorPopup(true);
       }
     } catch (err: any) {
-      const backendError =
-        err.response?.data?.message || err.response?.data?.error;
+      const backendError = err.response?.data?.message || err.response?.data?.error;
       setLocalError(
         backendError?.includes("duplicate key")
           ? "This Student ID or Email is already registered."
@@ -134,9 +131,7 @@ export function Signup({ onBack, onLogin }: SignupProps) {
         </button>
 
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-indigo-700">
-            Nova Schola Tanauan
-          </h1>
+          <h1 className="text-2xl font-bold text-indigo-700">Nova Schola Tanauan</h1>
           <p className="text-sm text-gray-500">Student Registration</p>
         </div>
 
@@ -153,9 +148,7 @@ export function Signup({ onBack, onLogin }: SignupProps) {
                     type="text"
                     placeholder={field === "firstName" ? "John" : "Doe"}
                     value={formData[field as keyof typeof formData]}
-                    onChange={(e) =>
-                      handleInputChange(field, e.target.value)
-                    }
+                    onChange={(e) => handleInputChange(field, e.target.value)}
                     required
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                   />
@@ -165,16 +158,12 @@ export function Signup({ onBack, onLogin }: SignupProps) {
 
             {/* Email */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Email Address
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Email Address</label>
               <input
                 type="email"
                 placeholder="john.doe@my.nst.edu.ph"
                 value={formData.email}
-                onChange={(e) =>
-                  handleInputChange("email", e.target.value)
-                }
+                onChange={(e) => handleInputChange("email", e.target.value)}
                 required
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
@@ -183,37 +172,27 @@ export function Signup({ onBack, onLogin }: SignupProps) {
             {/* Student ID & Year Level */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Student ID
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Student ID</label>
                 <input
                   type="text"
                   placeholder="NS202400123"
                   value={formData.studentId}
-                  onChange={(e) =>
-                    handleInputChange("studentId", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange("studentId", e.target.value)}
                   required
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Year Level
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Year Level</label>
                 <select
                   value={formData.yearLevel}
-                  onChange={(e) =>
-                    handleInputChange("yearLevel", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange("yearLevel", e.target.value)}
                   required
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 >
                   <option value="">Select year level</option>
                   {yearLevels.map((level) => (
-                    <option key={level} value={level}>
-                      {level}
-                    </option>
+                    <option key={level} value={level}>{level}</option>
                   ))}
                 </select>
               </div>
@@ -221,22 +200,16 @@ export function Signup({ onBack, onLogin }: SignupProps) {
 
             {/* Department */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Department / Major
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Department / Major</label>
               <select
                 value={formData.department}
-                onChange={(e) =>
-                  handleInputChange("department", e.target.value)
-                }
+                onChange={(e) => handleInputChange("department", e.target.value)}
                 required
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
               >
                 <option value="">Select your department</option>
                 {departments.map((dept) => (
-                  <option key={dept.value} value={dept.value}>
-                    {dept.label}
-                  </option>
+                  <option key={dept.value} value={dept.value}>{dept.label}</option>
                 ))}
               </select>
             </div>
@@ -245,11 +218,7 @@ export function Signup({ onBack, onLogin }: SignupProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
                 { field: "password", show: showPassword, set: setShowPassword },
-                {
-                  field: "confirmPassword",
-                  show: showConfirmPassword,
-                  set: setShowConfirmPassword,
-                },
+                { field: "confirmPassword", show: showConfirmPassword, set: setShowConfirmPassword },
               ].map(({ field, show, set }) => (
                 <div className="space-y-2 relative" key={field}>
                   <label className="block text-sm font-medium text-gray-700">
@@ -257,15 +226,9 @@ export function Signup({ onBack, onLogin }: SignupProps) {
                   </label>
                   <input
                     type={show ? "text" : "password"}
-                    placeholder={
-                      field === "password"
-                        ? "Create a strong password"
-                        : "Confirm password"
-                    }
+                    placeholder={field === "password" ? "Create a strong password" : "Confirm password"}
                     value={formData[field as keyof typeof formData]}
-                    onChange={(e) =>
-                      handleInputChange(field, e.target.value)
-                    }
+                    onChange={(e) => handleInputChange(field, e.target.value)}
                     required
                     className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                   />
@@ -289,24 +252,10 @@ export function Signup({ onBack, onLogin }: SignupProps) {
                 onChange={(e) => setAgreeToTerms(e.target.checked)}
                 className="mt-1 h-4 w-4 rounded border-gray-300"
               />
-              <label
-                htmlFor="terms"
-                className="text-sm leading-relaxed cursor-pointer"
-              >
+              <label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
                 I agree to the{" "}
-                <a
-                  href="#terms"
-                  className="text-indigo-600 hover:underline"
-                >
-                  Terms of Service
-                </a>{" "}
-                and{" "}
-                <a
-                  href="#privacy"
-                  className="text-indigo-600 hover:underline"
-                >
-                  Privacy Policy
-                </a>
+                <a href="#terms" className="text-indigo-600 hover:underline">Terms of Service</a> and{" "}
+                <a href="#privacy" className="text-indigo-600 hover:underline">Privacy Policy</a>
               </label>
             </div>
 

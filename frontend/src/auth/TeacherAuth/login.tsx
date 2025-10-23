@@ -25,7 +25,7 @@ export default function TeacherLogin({ onLoginSuccess }: TeacherLoginProps): JSX
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/auth/teacher/login",
+        `${import.meta.env.VITE_API_URL}/auth/teacher/login`,
         { email, password }
       );
 
