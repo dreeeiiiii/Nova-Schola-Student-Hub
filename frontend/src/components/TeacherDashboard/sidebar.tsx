@@ -8,13 +8,8 @@ interface TeacherSidebarProps {
   onLogout?: () => void;
 }
 
-const sidebarItems = [
-  { name: "Announcements", icon: Bell, path: "announcements" },
-  { name: "Messages", icon: MessageSquare, path: "messages" },
-  { name: "Profile", icon: User, path: "profile" },
-  { name: "Connect", icon: User, path: "connect" },
-  { name: "Settings", icon: Settings, path: "settings" },
-];
+// Backend API URL from environment
+const API_URL = import.meta.env.VITE_API_URL;
 
 export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
   isOpen,
@@ -26,7 +21,9 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
 
   const [teacherName, setTeacherName] = useState("");
   const [teacherDept, setTeacherDept] = useState("");
+  const [unreadCount, setUnreadCount] = useState<number | undefined>(0);
 
+  // ---------------- Parse token ----------------
   useEffect(() => {
     const token = localStorage.getItem("teacherToken");
     if (token) {
@@ -40,8 +37,40 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
     }
   }, []);
 
+  // ---------------- Fetch unread message count ----------------
+  useEffect(() => {
+    const token = localStorage.getItem("teacherToken");
+    if (!token) return;
+
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch(`${API_URL}/lastChats/unread-count`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("Failed to fetch unread count");
+        const data = await res.json();
+        setUnreadCount(data.count > 0 ? data.count : undefined);
+      } catch (err) {
+        console.error("Unread fetch error:", err);
+      }
+    };
+
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 10000); // refresh every 10s
+    return () => clearInterval(interval);
+  }, []);
+
+  const sidebarItems = [
+    { name: "Announcements", icon: Bell, path: "announcements" },
+    { name: "Messages", icon: MessageSquare, path: "messages", count: unreadCount },
+    { name: "Profile", icon: User, path: "profile" },
+    { name: "Connect", icon: User, path: "connect" },
+    { name: "Settings", icon: Settings, path: "settings" },
+  ];
+
   const handleItemClick = (path: string) => {
     navigate(`/teacher/${path}`);
+    if (path === "messages") setUnreadCount(undefined); // hide badge on open
     onClose();
   };
 
@@ -50,7 +79,7 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
       className={`
         fixed top-0 left-0 h-screen w-64 bg-gray-900 text-white shadow-lg
         flex flex-col justify-between p-4 transition-transform duration-300
-        md:translate-x-0 mt-10 
+        md:translate-x-0 mt-10
         ${isOpen ? "translate-x-0 z-50" : "-translate-x-full z-40"}
         md:block md:relative md:translate-x-0 rounded-lg
       `}
@@ -73,14 +102,23 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
             <button
               key={item.name}
               onClick={() => handleItemClick(item.path)}
-              className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                isActive
+              className={`
+                flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                ${isActive
                   ? "bg-indigo-600 text-white shadow-md"
                   : "text-gray-400 hover:bg-gray-800 hover:text-white"
-              }`}
+                }
+              `}
             >
-              <Icon size={20} />
-              <span>{item.name}</span>
+              <div className="flex items-center gap-3">
+                <Icon size={20} />
+                <span>{item.name}</span>
+              </div>
+              {item.count && (
+                <span className="bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                  {item.count}
+                </span>
+              )}
             </button>
           );
         })}
@@ -90,7 +128,7 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
       <div className="mt-6 flex flex-col items-center gap-2 mb-10">
         <div className="text-sm text-gray-400 text-center">
           <div>{teacherName}</div>
-          <div>{teacherDept}</div>
+          <div>{teacherDept || "No department"}</div>
         </div>
         <button
           onClick={onLogout}

@@ -30,13 +30,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen })
 
   const [unreadCount, setUnreadCount] = useState<number | undefined>(0);
 
+  const API_URL = import.meta.env.VITE_API_URL || "";
+
   // ---------------- Fetch unread message count ----------------
   useEffect(() => {
     if (!token || !userId) return;
 
     const fetchUnread = async () => {
       try {
-        const res = await fetch("/api/lastChats/unread-count", {
+        const res = await fetch(`${API_URL}/lastChats/unread-count`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error("Failed to fetch unread count");
@@ -48,9 +50,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen })
     };
 
     fetchUnread();
-    const interval = setInterval(fetchUnread, 10000); // refresh every 10s
+    const interval = setInterval(fetchUnread, 10000);
     return () => clearInterval(interval);
-  }, [token, userId]);
+  }, [token, userId, API_URL]);
+
+  // ---------------- Clear unread if on Messages page ----------------
+  useEffect(() => {
+    if (location.pathname.startsWith("/student/message")) {
+      setUnreadCount(undefined);
+    }
+  }, [location.pathname]);
 
   const sidebarItems = [
     { name: "Announcements", icon: Bell, path: "/student/announcement" },
@@ -65,17 +74,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen })
 
   const handleTabClick = (path: string) => {
     if (location.pathname !== path) navigate(path);
-
-    // hide unread badge when opening Messages
-    if (path === "/student/message") setUnreadCount(undefined);
-
     setSidebarOpen(false);
   };
 
   const initials = name
     ? name
         .split(" ")
-        .map((n: string[]) => n[0])
+        .map((n: string) => n[0])
         .join("")
         .slice(0, 2)
         .toUpperCase()

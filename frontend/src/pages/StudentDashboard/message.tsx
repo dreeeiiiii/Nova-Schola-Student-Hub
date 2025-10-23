@@ -70,11 +70,14 @@ export const MessagesPage: React.FC = () => {
   const token = localStorage.getItem("studentToken");
   const { id: currentUserId, name: currentUserName } = parseToken(token);
 
+  const API_URL = import.meta.env.VITE_API_URL || "";
+  const SOCKET_URL = import.meta.env.VITE_SOCKET_API_URL || "";
+
   // ---------------- SOCKET INIT ----------------
   useEffect(() => {
     if (!token) return;
 
-    const socket = io(import.meta.env.VITE_SOCKET_API_URL, { auth: { token } });
+    const socket = io(SOCKET_URL, { auth: { token } });
     socketRef.current = socket;
 
     socket.on("connect", () => console.log("Socket connected!", socket.id));
@@ -85,7 +88,7 @@ export const MessagesPage: React.FC = () => {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [token]);
+  }, [token, SOCKET_URL]);
 
   // ---------------- SOCKET MESSAGE LISTENER ----------------
   useEffect(() => {
@@ -106,7 +109,6 @@ export const MessagesPage: React.FC = () => {
       setMessages((prev) => {
         const newMessages = [...prev];
 
-        // Replace optimistic message
         if (msg.tempId && isFromCurrentUser) {
           const idx = newMessages.findIndex((m) => m.id === msg.tempId);
           if (idx !== -1) {
@@ -115,14 +117,12 @@ export const MessagesPage: React.FC = () => {
           }
         }
 
-        // Avoid duplicates
         if (newMessages.some((m) => m.id === newMsg.id)) return newMessages;
 
         newMessages.push(newMsg);
         return newMessages;
       });
 
-      // Update user list last message
       const contactIdToUpdate = newMsg.fromCurrentUser ? selectedUser?.id : newMsg.senderId;
       if (contactIdToUpdate) {
         updateUserListForMessage(setUsers, contactIdToUpdate, newMsg.content, newMsg.timestamp!);
@@ -134,7 +134,7 @@ export const MessagesPage: React.FC = () => {
     return () => {
       socket.off("message", handleMessage);
     };
-  }, [currentUserId, selectedUser?.id, users]);
+  }, [currentUserId, selectedUser?.id]);
 
   // ---------------- FETCH USERS & LAST CHATS ----------------
   useEffect(() => {
@@ -144,9 +144,10 @@ export const MessagesPage: React.FC = () => {
       try {
         const headers: HeadersInit = { Authorization: `Bearer ${token}` };
         const [resLast, resUsers] = await Promise.all([
-          fetch("/lastChats/last-messages", { headers }),
-          fetch("/contacts", { headers }),
+          fetch(`${API_URL}/lastChats/last-messages`, { headers }),
+          fetch(`${API_URL}/contacts`, { headers }),
         ]);
+
         if (!resLast.ok || !resUsers.ok) throw new Error("Failed to fetch");
 
         const lastChats = await resLast.json();
@@ -172,7 +173,7 @@ export const MessagesPage: React.FC = () => {
         console.error(err);
       }
     })();
-  }, [token]);
+  }, [token, API_URL]);
 
   // ---------------- SELECT USER ----------------
   useEffect(() => {

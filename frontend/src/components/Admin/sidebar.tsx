@@ -47,7 +47,9 @@ export const AdminSidebar: React.FC<SidebarProps> = ({ onLinkClick }) => {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const adminToken = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+  const API_URL = import.meta.env.VITE_API_URL || "";
 
+  // ---------------- Fetch Admin Info ----------------
   useEffect(() => {
     const fetchAdminUser = async () => {
       if (!adminToken) {
@@ -55,7 +57,7 @@ export const AdminSidebar: React.FC<SidebarProps> = ({ onLinkClick }) => {
         return;
       }
       try {
-        const res = await axios.get("/api/admin/me", {
+        const res = await axios.get(`${API_URL}/admin/me`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         });
         const user = res.data;
@@ -77,16 +79,16 @@ export const AdminSidebar: React.FC<SidebarProps> = ({ onLinkClick }) => {
       }
     };
     fetchAdminUser();
-  }, [adminToken]);
+  }, [adminToken, API_URL]);
 
-  const activeTab = adminSidebarItems.find((item) => location.pathname === item.path)?.name || "Dashboard";
+  const activeTab =
+    adminSidebarItems.find((item) => location.pathname === item.path)?.name || "Dashboard";
 
   const handleTabClick = (path: string) => {
     if (location.pathname !== path) navigate(path);
     if (onLinkClick) onLinkClick();
   };
 
-  // Handle logout after confirmation modal
   const confirmLogout = () => {
     localStorage.removeItem("adminToken");
     setIsLogoutModalOpen(false);
@@ -183,3 +185,5 @@ export const AdminSidebar: React.FC<SidebarProps> = ({ onLinkClick }) => {
     </>
   );
 };
+
+export default AdminSidebar;
